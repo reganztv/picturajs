@@ -192,9 +192,9 @@ class ZoomPlugin {
         this.zoomControls = document.createElement('div');
         this.zoomControls.className = 'pictura-zoom-controls';
         this.zoomControls.innerHTML = `
-            <button class="pictura-zoom-in" title="Увеличить">+</button>
-            <button class="pictura-zoom-out" title="Уменьшить">−</button>
-            <button class="pictura-zoom-reset" title="Сбросить">↻</button>
+            <button class="pictura-zoom-in" title="Увеличить"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.7783 8.99998L1.22192 8.99998M9.0001 1.2218L9.0001 16.7782" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+            <button class="pictura-zoom-out" title="Уменьшить"><svg width="18" height="2" viewBox="0 0 18 2" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.7781 1L1.22173 1" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+            <button class="pictura-zoom-reset" title="Сбросить"><svg width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 3.34783C4.58172 3.34783 1 6.85168 1 11.1739C1 15.4961 4.58172 19 9 19C13.4183 19 17 15.4961 17 11.1739C17 9.04095 16.1277 7.10728 14.7131 5.69565M9 3.34783L6.5 6M9 3.34783L6 1.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         `;
         overlay.appendChild(this.zoomControls);
         

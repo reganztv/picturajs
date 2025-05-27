@@ -2,37 +2,32 @@ class Pictura {
     constructor(options = {}) {
         // Настройки по умолчанию
         this.defaults = {
-            gallerySelector: '[data-gallery]',
+            allerySelector: '[data-gallery]',
             thumbnailSelector: '.thumbnail',
             viewAllSelector: '[data-gallery-all]',
-            imageURLAttribute: 'data-full', // Добавляем новую настройку
+            imageURLAttribute: 'data-full',
             animationDuration: 300,
             swipeThreshold: 50,
             keyboardNavigation: true,
             wheelNavigation: true,
             touchNavigation: true,
             counter: true,
+            counterType: 'numeric', // 'numeric' или 'progress'
             preload: true,
-            // сломанные эффекты перехода
-            transitionEffect: 'fade', // fade, slide, zoom
-            // настройки
+            transitionEffect: 'fade',
             effects: {
                 fade: {
                     duration: 300
                 },
                 slide: {
-                    direction: 'horizontal', // horizontal или vertical
+                    direction: 'horizontal',
                     duration: 400
                 },
                 zoom: {
                     scale: 0.8,
                     duration: 350
-                },
-                // flip: {
-                //     duration: 600
-                // },
+                }
             },
-            // YouTube настройки
             youtube: {
                 width: 853,
                 height: 480,
@@ -42,7 +37,6 @@ class Pictura {
                     modestbranding: 1
                 }
             },
-            // Настройки для плагинов
             plugins: {}
         };
 
@@ -385,14 +379,14 @@ class Pictura {
         prevBtn.innerHTML = '&lt;';
         prevBtn.className = 'gallery-nav gallery-nav--left';
         const prevBtnInner = document.createElement('button')
-        prevBtnInner.innerHTML = '&lt;';
+        prevBtnInner.innerHTML = '<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.00005 1L1.3536 7.64645C1.15834 7.84171 1.15834 8.15829 1.3536 8.35355L8.00005 15" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>';
         prevBtn.appendChild(prevBtnInner);
         overlay.appendChild(prevBtn);
 
         const nextBtn = document.createElement('div');
         nextBtn.className = 'gallery-nav gallery-nav--right';
         const nextBtnInner = document.createElement('button')
-        nextBtnInner.innerHTML = '&gt;';
+        nextBtnInner.innerHTML = '<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L7.64645 7.64645C7.84171 7.84171 7.84171 8.15829 7.64645 8.35355L1 15" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>';
         nextBtn.appendChild(nextBtnInner);
         overlay.appendChild(nextBtn);
     }
@@ -402,17 +396,90 @@ class Pictura {
 
         closeBtn.className = 'gallery-close';
         const closeBtnInner = document.createElement('button')
-        closeBtnInner.innerHTML = '&times;';
+        closeBtnInner.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.5 1.5L1.5 12.5M1.5 1.5L12.5 12.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>';
         closeBtn.appendChild(closeBtnInner);
         overlay.appendChild(closeBtn);
     }
 
     addCounter(overlay, current, total) {
+        if (!this.settings.counter) return;
+
+        // Удаляем все старые счетчики
+        const oldCounters = overlay.querySelectorAll('.gallery-counter, .gallery-counter--numeric, .gallery-counter--progress');
+        oldCounters.forEach(counter => overlay.removeChild(counter));
+
+        if (this.settings.counterType === 'progress') {
+            this.addProgressCounter(overlay, current, total);
+        } else {
+            this.addNumericCounter(overlay, current, total);
+        }
+    }
+
+    addNumericCounter(overlay, current, total) {
         const counter = document.createElement('div');
-        counter.className = 'gallery-counter';
+        counter.className = 'gallery-counter gallery-counter--numeric';
         counter.textContent = `${current} / ${total}`;
         overlay.appendChild(counter);
     }
+
+    addProgressCounter(overlay, current, total) {
+        const counter = document.createElement('div');
+        counter.className = 'gallery-counter gallery-counter--progress';
+
+        const progressBar = document.createElement('div');
+        progressBar.className = 'gallery-counter__progress';
+
+        const progressFill = document.createElement('div');
+        progressFill.className = 'gallery-counter__progress-fill';
+        progressFill.style.width = `${(current / total) * 100}%`;
+
+        progressBar.appendChild(progressFill);
+        counter.appendChild(progressBar);
+
+
+        overlay.appendChild(counter);
+    }
+
+    updateCounter(overlay, current, total) {
+        if (!this.settings.counter) return;
+
+        // Находим существующий счетчик
+        const existingCounter = overlay.querySelector('.gallery-counter');
+
+        if (!existingCounter) {
+            // Если счетчика нет, создаем новый
+            this.addCounter(overlay, current, total);
+            return;
+        }
+
+        if (this.settings.counterType === 'progress') {
+            // Обновляем прогрессбар
+            const progressFill = overlay.querySelector('.gallery-counter__progress-fill');
+            const counterText = overlay.querySelector('.gallery-counter__text');
+
+            if (progressFill) {
+                progressFill.style.width = `${(current / total) * 100}%`;
+            }
+
+            if (counterText) {
+                counterText.textContent = `${current} / ${total}`;
+            }
+
+            // Если вдруг был числовой счетчик, заменяем его на прогрессбар
+            if (existingCounter.classList.contains('gallery-counter--numeric')) {
+                this.addCounter(overlay, current, total);
+            }
+        } else {
+            // Обновляем числовой счетчик
+            if (existingCounter.classList.contains('gallery-counter--numeric')) {
+                existingCounter.textContent = `${current} / ${total}`;
+            } else {
+                // Если вдруг был прогрессбар, заменяем его на числовой счетчик
+                this.addCounter(overlay, current, total);
+            }
+        }
+    }
+
 
     addSwipeHint(overlay) {
         if (window.innerWidth >= 592) {
@@ -540,12 +607,6 @@ class Pictura {
         }
     }
 
-    updateCounter(overlay, current, total) {
-        const counter = overlay.querySelector('.gallery-counter');
-        if (counter) {
-            counter.textContent = `${current} / ${total}`;
-        }
-    }
 
     changeMedia(contentContainer, currentElement, newElement, direction) {
         console.log('Смена медиа:', currentElement);
@@ -556,7 +617,7 @@ class Pictura {
             console.error('Невозможно получить URL медиа для', newElement);
             return;
         }
-        
+
         // Проверяем, YouTube это или изображение
         const isYouTube = this.isYouTubeUrl(mediaUrl);
 
