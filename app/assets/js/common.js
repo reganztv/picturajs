@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const gallery = new Pictura({
     gallerySelector: '.gallery-page, [data-gallery-two], .video',
     transitionEffect: 'fade',
-    counterType: 'progress',
+    counterType: 'numeric',
     plugins: {
       zoom: {
         maxScale: 3,

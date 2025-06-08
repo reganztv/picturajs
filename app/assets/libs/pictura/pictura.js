@@ -15,6 +15,7 @@ class Pictura {
             counterType: 'numeric', // 'numeric' или 'progress'
             preload: true,
             transitionEffect: 'fade',
+
             effects: {
                 fade: {
                     duration: 300
@@ -42,7 +43,8 @@ class Pictura {
 
         // в собираю все настройки в кучу
         this.settings = {...this.defaults, ...options};
-        
+        this.scrollbarWidth = 0; // Ширина скроллбара
+        this.bodyPaddingRight = 0; // Исходный padding-right body
         // Загружаем необходимые плагины
         this.loadPlugins().then(() => {
             this.init();
@@ -300,7 +302,60 @@ class Pictura {
         }
         return Array.from(gallery.querySelectorAll(`${this.settings.thumbnailSelector}[data-group="${group}"]`));
     }
+    lockBodyScroll() {
+        // Запоминаем исходный padding-right
+        this.bodyPaddingRight = parseInt(document.body.style.paddingRight || 0);
 
+        // Вычисляем ширину скроллбара
+        this.scrollbarWidth = this.getScrollbarWidth();
+
+        // Если есть скроллбар, добавляем padding-right
+        if (this.scrollbarWidth > 0) {
+            document.body.style.paddingRight = `${this.bodyPaddingRight + this.scrollbarWidth}px`;
+        }
+
+        // Блокируем скролл
+        document.body.classList.add('no-scroll');
+    }
+
+    /**
+     * Разблокирует скролл страницы
+     */
+    unlockBodyScroll() {
+        // Восстанавливаем исходный padding-right
+        document.body.style.paddingRight = this.bodyPaddingRight ? `${this.bodyPaddingRight}px` : '';
+
+        // Разблокируем скролл
+        document.body.classList.remove('no-scroll');
+    }
+
+    /**
+     * Вычисляет ширину скроллбара
+     * @return {number} Ширина скроллбара в пикселях
+     */
+    getScrollbarWidth() {
+        // Создаем временный элемент для измерения
+        const outer = document.createElement('div');
+        outer.style.visibility = 'hidden';
+        outer.style.overflow = 'scroll';
+        outer.style.width = '100px';
+        outer.style.position = 'absolute';
+        outer.style.top = '-9999px';
+        document.body.appendChild(outer);
+
+        // Внутренний элемент
+        const inner = document.createElement('div');
+        inner.style.width = '100%';
+        outer.appendChild(inner);
+
+        // Вычисляем разницу в ширине
+        const scrollbarWidth = outer.offsetWidth - inner.offsetWidth;
+
+        // Удаляем временный элемент
+        outer.parentNode.removeChild(outer);
+
+        return scrollbarWidth;
+    }
     createModal(images, initialImage) {
         if (!images.length) {
             console.error('Нет изображений для отображения в галерее');
@@ -312,7 +367,7 @@ class Pictura {
             console.error('Начальное изображение не найдено в списке', initialImage);
             return;
         }
-
+        this.lockBodyScroll();
         console.log('Создание модального окна:', {
             total: images.length,
             currentIndex,
@@ -376,7 +431,6 @@ class Pictura {
 
     addNavigation(overlay, content, totalImages) {
         const prevBtn = document.createElement('div');
-        prevBtn.innerHTML = '&lt;';
         prevBtn.className = 'gallery-nav gallery-nav--left';
         const prevBtnInner = document.createElement('button')
         prevBtnInner.innerHTML = '<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.00005 1L1.3536 7.64645C1.15834 7.84171 1.15834 8.15829 1.3536 8.35355L8.00005 15" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>';
@@ -500,7 +554,7 @@ class Pictura {
     setupModalEvents(overlay, content, mediaElement, images, initialIndex) {
         let currentIndex = initialIndex;
         const totalImages = images.length;
-
+        this.unlockBodyScroll();
         const next = () => {
             if (currentIndex < totalImages - 1) {
                 currentIndex++;
