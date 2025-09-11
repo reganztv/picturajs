@@ -245,52 +245,58 @@ class Pictura {
     }
 
     setupEventListeners() {
-        this.galleries.forEach((gallery, index) => {
-            console.log(`Настройка галереи #${index}:`, gallery);
-            
-            // клик на маленькие картинки
-            const thumbnails = gallery.querySelectorAll(this.settings.thumbnailSelector);
-            console.log(`- Найдено ${thumbnails.length} миниатюр`);
-            
-            thumbnails.forEach(thumb => {
-                // Добавляем атрибут для отладки, чтобы видеть, что мы добавили обработчик
-                thumb.setAttribute('data-gallery-initialized', 'true');
-                
-                thumb.addEventListener('click', (e) => {
-                    console.log('Клик по миниатюре:', thumb);
-                    e.preventDefault(); // Предотвращаем стандартное поведение ссылки
+        // Используем делегирование событий через document для работы с динамически загружаемым контентом
+        document.addEventListener('click', (e) => {
+            // Обработка кликов по миниатюрам
+            const thumb = e.target.closest(this.settings.thumbnailSelector);
+            if (thumb) {
+                const gallery = thumb.closest(this.settings.gallerySelector);
+                if (gallery) {
+                    console.log('Клик по миниатюре (делегирование):', thumb);
+                    e.preventDefault();
+                    
                     const group = thumb.dataset.group || 'default';
                     const groupImages = this.getGroupImages(gallery, group);
                     console.log(`- Найдено ${groupImages.length} изображений в группе '${group}'`);
                     this.createModal(groupImages, thumb);
-                });
-            });
-
-            // кнопка если показать все
-            const viewAllBtn = gallery.querySelector(this.settings.viewAllSelector);
-            console.log(`- Кнопка "показать все": ${viewAllBtn ? 'найдена' : 'не найдена'}`);
+                    return;
+                }
+            }
             
+            // Обработка кликов по кнопке "показать все"
+            const viewAllBtn = e.target.closest(this.settings.viewAllSelector);
             if (viewAllBtn) {
-                viewAllBtn.addEventListener('click', (e) => {
-                    console.log('Клик по кнопке "показать все":', viewAllBtn);
-                    e.preventDefault(); // Предотвращаем стандартное поведение ссылки
-                    // Важно: теперь мы используем текущую галерею (gallery) вместо поиска через closest
+                const gallery = viewAllBtn.closest(this.settings.gallerySelector);
+                if (gallery) {
+                    console.log('Клик по кнопке "показать все" (делегирование):', viewAllBtn);
+                    e.preventDefault();
+                    
                     let allImages;
                     const firstThumb = gallery.querySelector(this.settings.thumbnailSelector);
-
+                    
                     if (firstThumb && firstThumb.dataset.group) {
                         const group = firstThumb.dataset.group;
                         allImages = this.getGroupImages(gallery, group);
                     } else {
                         allImages = Array.from(gallery.querySelectorAll(this.settings.thumbnailSelector));
                     }
-
+                    
                     console.log(`- В галерее найдено ${allImages.length} изображений`);
                     if (allImages.length) {
                         this.createModal(allImages, allImages[0]);
                     }
-                });
+                    return;
+                }
             }
+        });
+        
+        // Инициализируем существующие галереи (для отладки)
+        this.galleries.forEach((gallery, index) => {
+            console.log(`Настройка галереи #${index}:`, gallery);
+            const thumbnails = gallery.querySelectorAll(this.settings.thumbnailSelector);
+            console.log(`- Найдено ${thumbnails.length} миниатюр`);
+            const viewAllBtn = gallery.querySelector(this.settings.viewAllSelector);
+            console.log(`- Кнопка "показать все": ${viewAllBtn ? 'найдена' : 'не найдена'}`);
         });
     }
 
