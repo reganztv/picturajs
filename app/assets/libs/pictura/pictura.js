@@ -115,6 +115,21 @@ class Pictura {
 
             // Добавляем script в head
             document.head.appendChild(script);
+
+            // Пытаемся загрузить CSS плагина
+            if (pluginOptions.css !== false) {
+                const cssPath = `/assets/js/plugins/${pluginName}/index.css`;
+                if (!document.querySelector(`link[href="${cssPath}"]`)) {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = cssPath;
+                    link.onerror = () => {
+                        // Если CSS нет, просто игнорируем (удаляем битый линк)
+                        link.remove();
+                    };
+                    document.head.appendChild(link);
+                }
+            }
         });
     }
 
@@ -406,6 +421,9 @@ class Pictura {
         }, 10);
 
         this.setupModalEvents(overlay, content, content.firstChild, images, currentIndex);
+
+        // Уведомляем плагины об открытии модального окна
+        this.triggerPlugins('onModalOpen', { overlay, content, images, currentIndex });
     }
 
     addNavigation(overlay, content, totalImages) {
@@ -558,6 +576,9 @@ class Pictura {
                 overlay.remove();
                 document.body.classList.remove('no-scroll');
                 this.removeEventListeners();
+
+                // Уведомляем плагины о закрытии
+                this.triggerPlugins('onModalClose');
             }, this.settings.animationDuration);
         };
 
@@ -677,6 +698,9 @@ class Pictura {
             // Для изображений
             this.loadImage(contentContainer, mediaUrl, direction);
         }
+
+        // Уведомляем плагины о смене медиа
+        this.triggerPlugins('onMediaChange', { currentElement, newElement, direction });
     }
 
     // Очистка содержимого контейнера
@@ -837,49 +861,58 @@ class Pictura {
         }, duration * 2 + 50);
     }
 
-
-    // apply3DFlipEffect(container, newSrc) {
-    //     var duration = this.settings.effects.flip.duration;
-
-    //     // Создаем перспективу для 3D-эффекта
-    //     container.style.position = 'relative';
-    //     container.style.perspective = '1000px';
-    //     container.style.transformStyle = 'preserve-3d';
-    //     container.style.transition = `transform ${duration}ms ease-out`;
-
-    //     // Начинаем анимацию переворота (первая половина)
-    //     container.style.transform = 'rotateY(90deg)';
-
-    //     // В середине анимации меняем изображение
-    //     setTimeout(() => {
-    //         // Очищаем содержимое
-    //         this.clearContent(container);
-
-    //         // Добавляем новое изображение
-    //         var newImg = document.createElement('img');
-    //         newImg.className = 'gallery-image';
-    //         newImg.src = newSrc;
-
-    //         container.appendChild(newImg);
-
-
-    //         // Устанавливаем контейнер в противоположную сторону мгновенно
-    //         container.style.transition = 'none';
-    //         container.style.transform = 'rotateY(270deg)';
-
-    //         // Позволяем браузеру отрисовать
-    //         setTimeout(() => {
-    //             requestAnimationFrame(() => {
-    //                 // Возвращаем контейнер в центр с анимацией
-    //                 container.style.transition = `transform ${duration}ms ease-out`;
-    //                 // Возвращаем контейнер в центр с анимацией
-    //                 container.style.perspective = '';
-    //                 container.style.transform = '';
-    //             });
-    //         }, 10);
-    //     }, duration / 2);
-    // }
+    // Вызывает метод у всех инициализированных плагинов
+    triggerPlugins(methodName, args) {
+        Object.keys(this.settings.plugins).forEach(pluginName => {
+            const pluginInstance = this[`${pluginName}Plugin`];
+            if (pluginInstance && typeof pluginInstance[methodName] === 'function') {
+                pluginInstance[methodName](args);
+            }
+        });
+    }
 }
+
+// apply3DFlipEffect(container, newSrc) {
+//     var duration = this.settings.effects.flip.duration;
+
+//     // Создаем перспективу для 3D-эффекта
+//     container.style.position = 'relative';
+//     container.style.perspective = '1000px';
+//     container.style.transformStyle = 'preserve-3d';
+//     container.style.transition = `transform ${duration}ms ease-out`;
+
+//     // Начинаем анимацию переворота (первая половина)
+//     container.style.transform = 'rotateY(90deg)';
+
+//     // В середине анимации меняем изображение
+//     setTimeout(() => {
+//         // Очищаем содержимое
+//         this.clearContent(container);
+
+//         // Добавляем новое изображение
+//         var newImg = document.createElement('img');
+//         newImg.className = 'gallery-image';
+//         newImg.src = newSrc;
+
+//         container.appendChild(newImg);
+
+
+//         // Устанавливаем контейнер в противоположную сторону мгновенно
+//         container.style.transition = 'none';
+//         container.style.transform = 'rotateY(270deg)';
+
+//         // Позволяем браузеру отрисовать
+//         setTimeout(() => {
+//             requestAnimationFrame(() => {
+//                 // Возвращаем контейнер в центр с анимацией
+//                 container.style.transition = `transform ${duration}ms ease-out`;
+//                 // Возвращаем контейнер в центр с анимацией
+//                 container.style.perspective = '';
+//                 container.style.transform = '';
+//             });
+//         }, 10);
+//     }, duration / 2);
+// }
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = Pictura;
