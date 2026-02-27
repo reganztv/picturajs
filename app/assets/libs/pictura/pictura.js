@@ -42,7 +42,7 @@ class Pictura {
         };
 
         // в собираю все настройки в кучу
-        this.settings = {...this.defaults, ...options};
+        this.settings = { ...this.defaults, ...options };
         this.scrollbarWidth = 0; // Ширина скроллбара
         this.bodyPaddingRight = 0; // Исходный padding-right body
         // Загружаем необходимые плагины
@@ -58,18 +58,18 @@ class Pictura {
     loadPlugins() {
         // Получаем список плагинов из настроек
         const pluginsToLoad = Object.keys(this.settings.plugins);
-        
+
         if (pluginsToLoad.length === 0) {
             return Promise.resolve(); // Нет плагинов для загрузки
         }
-        
+
         console.log('Загрузка плагинов:', pluginsToLoad);
-        
+
         // Создаем массив промисов для загрузки каждого плагина
         const pluginPromises = pluginsToLoad.map(pluginName => {
             return this.loadPlugin(pluginName, this.settings.plugins[pluginName]);
         });
-        
+
         // Возвращаем Promise, который будет разрешен, когда все плагины загрузятся
         return Promise.all(pluginPromises);
     }
@@ -94,25 +94,25 @@ class Pictura {
             }
             // Путь к файлу плагина
             const pluginPath = `/assets/js/plugins/${pluginName}/index.js`;
-            
+
             // Создаем элемент script
             const script = document.createElement('script');
             script.src = pluginPath;
             script.async = true;
-            
+
             // Обработчик успешной загрузки
             script.onload = () => {
                 console.log(`Плагин ${pluginName} успешно загружен`);
                 this.initializePlugin(pluginName, pluginClassName, pluginOptions);
                 resolve();
             };
-            
+
             // Обработчик ошибки
             script.onerror = () => {
                 console.error(`Не удалось загрузить плагин ${pluginName} по пути ${pluginPath}`);
                 reject(new Error(`Не удалось загрузить плагин ${pluginName}`));
             };
-            
+
             // Добавляем script в head
             document.head.appendChild(script);
         });
@@ -128,7 +128,7 @@ class Pictura {
         if (window[pluginClassName]) {
             // Создаем экземпляр плагина, передавая ему текущий экземпляр галереи и настройки
             this[`${pluginName}Plugin`] = new window[pluginClassName](this, pluginOptions);
-        
+
             // Явно вызываем init(), если он существует
             if (typeof this[`${pluginName}Plugin`].init === 'function') {
                 this[`${pluginName}Plugin`].init();
@@ -152,96 +152,50 @@ class Pictura {
     init() {
         // Используем стандартный querySelectorAll, он уже поддерживает несколько селекторов через запятую
         this.galleries = document.querySelectorAll(this.settings.gallerySelector);
-        
+
         if (!this.galleries.length) return;
 
         this.setupEventListeners();
     }
-    
+
     // Новый метод для получения URL изображения из элемента
     getImageUrl(element) {
         // Сначала проверяем настроенный атрибут
         if (element.dataset[this.settings.imageURLAttribute]) {
             return element.dataset[this.settings.imageURLAttribute];
         }
-        
+
         // Затем проверяем data-full
         if (element.dataset.full) {
             return element.dataset.full;
         }
-        
+
         // Другие возможные источники
         if (element.href) {
             return element.href;
         }
-        
+
         if (element.src) {
             return element.src;
         }
-        
+
         // Для изображений проверяем атрибут src
         const imgElement = element.querySelector('img');
         if (imgElement && imgElement.src) {
             return imgElement.src;
         }
-        
+
         console.error('Не удалось найти URL изображения для элемента:', element);
         return null;
     }
-    
-    // Проверка, является ли URL YouTube видео
-    isYouTubeUrl(url) {
-        return url && (
-            url.includes('youtube.com/watch') || 
-            url.includes('youtu.be/') ||
-            url.includes('youtube.com/embed/')
-        );
+
+    // Hooks for plugins (overridden by VideoPlugin)
+    isVideoUrl(url) {
+        return false;
     }
-    
-    // Получение ID видео из URL YouTube
-    getYouTubeVideoId(url) {
-        if (!url) return null;
-        
-        // Паттерны для разных форматов URL YouTube
-        const patterns = [
-            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^?&]+)/i,
-            /youtube\.com\/watch\?.*v=([^&]+)/i
-        ];
-        
-        for (const pattern of patterns) {
-            const match = url.match(pattern);
-            if (match && match[1]) {
-                return match[1];
-            }
-        }
-        
+
+    createVideoElement(url) {
         return null;
-    }
-    
-    // Создание iframe для YouTube видео
-    createYouTubeEmbed(videoId) {
-        const { width, height, playerVars } = this.settings.youtube;
-        
-        // Создаем параметры для URL
-        const params = new URLSearchParams();
-        for (const [key, value] of Object.entries(playerVars)) {
-            params.append(key, value);
-        }
-        
-        const embedUrl = `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
-        
-        const iframe = document.createElement('iframe');
-        iframe.className = 'gallery-video';
-        // iframe.width = width;
-        // iframe.height = height;
-        iframe.src = embedUrl;
-        iframe.frameBorder = '0';
-        iframe.allowFullscreen = true;
-        
-        // Добавляем важные разрешения для автовоспроизведения со звуком
-        iframe.allow = "autoplay; encrypted-media";
-        
-        return iframe;
     }
 
     setupEventListeners() {
@@ -254,7 +208,7 @@ class Pictura {
                 if (gallery) {
                     console.log('Клик по миниатюре (делегирование):', thumb);
                     e.preventDefault();
-                    
+
                     const group = thumb.dataset.group || 'default';
                     const groupImages = this.getGroupImages(gallery, group);
                     console.log(`- Найдено ${groupImages.length} изображений в группе '${group}'`);
@@ -262,7 +216,7 @@ class Pictura {
                     return;
                 }
             }
-            
+
             // Обработка кликов по кнопке "показать все"
             const viewAllBtn = e.target.closest(this.settings.viewAllSelector);
             if (viewAllBtn) {
@@ -270,17 +224,17 @@ class Pictura {
                 if (gallery) {
                     console.log('Клик по кнопке "показать все" (делегирование):', viewAllBtn);
                     e.preventDefault();
-                    
+
                     let allImages;
                     const firstThumb = gallery.querySelector(this.settings.thumbnailSelector);
-                    
+
                     if (firstThumb && firstThumb.dataset.group) {
                         const group = firstThumb.dataset.group;
                         allImages = this.getGroupImages(gallery, group);
                     } else {
                         allImages = Array.from(gallery.querySelectorAll(this.settings.thumbnailSelector));
                     }
-                    
+
                     console.log(`- В галерее найдено ${allImages.length} изображений`);
                     if (allImages.length) {
                         this.createModal(allImages, allImages[0]);
@@ -289,7 +243,7 @@ class Pictura {
                 }
             }
         });
-        
+
         // Инициализируем существующие галереи (для отладки)
         this.galleries.forEach((gallery, index) => {
             console.log(`Настройка галереи #${index}:`, gallery);
@@ -392,15 +346,14 @@ class Pictura {
             console.error('Невозможно получить URL медиа');
             return;
         }
-        
-        // Проверяем, является ли это YouTube видео
-        if (this.isYouTubeUrl(mediaUrl)) {
-            const videoId = this.getYouTubeVideoId(mediaUrl);
-            if (videoId) {
-                const iframe = this.createYouTubeEmbed(videoId);
-                content.appendChild(iframe);
+
+        // Проверяем, является ли это видео URL (обрабатывается плагином)
+        if (this.isVideoUrl(mediaUrl)) {
+            const videoElement = this.createVideoElement(mediaUrl);
+            if (videoElement) {
+                content.appendChild(videoElement);
             } else {
-                console.error('Не удалось получить ID видео YouTube из:', mediaUrl);
+                console.error('Не удалось создать видео элемент из:', mediaUrl);
                 return;
             }
         } else {
@@ -670,7 +623,7 @@ class Pictura {
 
     changeMedia(contentContainer, currentElement, newElement, direction) {
         console.log('Смена медиа:', currentElement);
-        
+
         // Получаем URL медиа
         const mediaUrl = this.getImageUrl(newElement);
         if (!mediaUrl) {
@@ -678,47 +631,46 @@ class Pictura {
             return;
         }
 
-        // Проверяем, YouTube это или изображение
-        const isYouTube = this.isYouTubeUrl(mediaUrl);
+        // Проверяем, видео это или изображение
+        const isVideo = this.isVideoUrl(mediaUrl);
 
         const currentUrl = this.getImageUrl(currentElement);
         if (!currentUrl) {
             console.error('Невозможно получить URL медиа для', currentElement);
             return;
         }
-        // Проверяем, YouTube это или изображение
-        const isCurrentYouTube = this.isYouTubeUrl(currentUrl);
-        
+        // Проверяем, видео это или изображение
+        const isCurrentVideo = this.isVideoUrl(currentUrl);
+
         // Очищаем контейнер
-        if (isYouTube || isCurrentYouTube) {
+        if (isVideo || isCurrentVideo) {
             this.clearContent(contentContainer);
         }
-        
-        if (isYouTube) {
-            // Для YouTube создаем iframe
-            const videoId = this.getYouTubeVideoId(mediaUrl);
-            if (videoId) {
-                const iframe = this.createYouTubeEmbed(videoId);
-                contentContainer.appendChild(iframe);
+
+        if (isVideo) {
+            // Для видео создаем iframe
+            const videoElement = this.createVideoElement(mediaUrl);
+            if (videoElement) {
+                contentContainer.appendChild(videoElement);
             }
         } else {
             // Для изображений
             this.loadImage(contentContainer, mediaUrl, direction);
         }
     }
-    
+
     // Очистка содержимого контейнера
     clearContent(container) {
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }
     }
-    
+
     // Загрузка изображения с эффектами
     loadImage(container, imageSrc, direction) {
         const img = document.createElement('img');
         img.className = 'gallery-image';
-        
+
         const preload = new Image();
         preload.src = imageSrc;
 
@@ -741,7 +693,7 @@ class Pictura {
                     container.appendChild(img);
             }
         };
-        
+
         preload.onerror = () => {
             console.error('Ошибка загрузки изображения:', imageSrc);
             img.src = imageSrc;
@@ -754,7 +706,7 @@ class Pictura {
 
         container.style.transition = `opacity ${duration}ms ease-out`;
         container.style.opacity = '0';
-        
+
         const img = document.createElement('img');
         img.className = 'gallery-image';
         img.src = newSrc;
@@ -868,28 +820,28 @@ class Pictura {
 
     // apply3DFlipEffect(container, newSrc) {
     //     var duration = this.settings.effects.flip.duration;
-        
+
     //     // Создаем перспективу для 3D-эффекта
     //     container.style.position = 'relative';
     //     container.style.perspective = '1000px';
     //     container.style.transformStyle = 'preserve-3d';
     //     container.style.transition = `transform ${duration}ms ease-out`;
-        
+
     //     // Начинаем анимацию переворота (первая половина)
     //     container.style.transform = 'rotateY(90deg)';
-        
+
     //     // В середине анимации меняем изображение
     //     setTimeout(() => {
     //         // Очищаем содержимое
     //         this.clearContent(container);
-            
+
     //         // Добавляем новое изображение
     //         var newImg = document.createElement('img');
     //         newImg.className = 'gallery-image';
     //         newImg.src = newSrc;
 
     //         container.appendChild(newImg);
-            
+
 
     //         // Устанавливаем контейнер в противоположную сторону мгновенно
     //         container.style.transition = 'none';

@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         step: 1,
         controlsEnabled: true
       },
+      video: {}
     },
   });
 });
