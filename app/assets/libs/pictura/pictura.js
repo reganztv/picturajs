@@ -204,13 +204,25 @@ class Pictura {
             // Обработка кликов по миниатюрам
             const thumb = e.target.closest(this.settings.thumbnailSelector);
             if (thumb) {
-                const gallery = thumb.closest(this.settings.gallerySelector);
-                if (gallery) {
+                // Ищем по всем инициированным галереям (на случай если миниатюры разбросаны по разным DOM нодам)
+                const isInsideGallery = Array.from(this.galleries).some(g => g.contains(thumb));
+
+                if (isInsideGallery) {
                     console.log('Клик по миниатюре (делегирование):', thumb);
                     e.preventDefault();
 
                     const group = thumb.dataset.group || 'default';
-                    const groupImages = this.getGroupImages(gallery, group);
+                    let groupImages = [];
+
+                    if (group !== 'default' && group !== 'all') {
+                        // Если есть конкретная группа, ищем по ВСЕМ галереям
+                        groupImages = this.getGroupImages(null, group);
+                    } else {
+                        // Иначе ищем только в текущей галерее
+                        const gallery = thumb.closest(this.settings.gallerySelector);
+                        groupImages = this.getGroupImages(gallery, group);
+                    }
+
                     console.log(`- Найдено ${groupImages.length} изображений в группе '${group}'`);
                     this.createModal(groupImages, thumb);
                     return;
@@ -254,9 +266,17 @@ class Pictura {
         });
     }
 
-
-
     getGroupImages(gallery, group) {
+        if (!gallery) {
+            // Ищем по всем галереям, проинициализированным этим инстансом
+            let images = [];
+            this.galleries.forEach(g => {
+                const thumbs = Array.from(g.querySelectorAll(`${this.settings.thumbnailSelector}[data-group="${group}"]`));
+                images = images.concat(thumbs);
+            });
+            return images;
+        }
+
         if (group === 'all') {
             return Array.from(gallery.querySelectorAll(this.settings.thumbnailSelector));
         }
