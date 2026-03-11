@@ -63,8 +63,6 @@ class Pictura {
             return Promise.resolve(); // Нет плагинов для загрузки
         }
 
-        console.log('Загрузка плагинов:', pluginsToLoad);
-
         // Создаем массив промисов для загрузки каждого плагина
         const pluginPromises = pluginsToLoad.map(pluginName => {
             return this.loadPlugin(pluginName, this.settings.plugins[pluginName]);
@@ -102,7 +100,6 @@ class Pictura {
 
             // Обработчик успешной загрузки
             script.onload = () => {
-                console.log(`Плагин ${pluginName} успешно загружен`);
                 this.initializePlugin(pluginName, pluginClassName, pluginOptions);
                 resolve();
             };
@@ -117,7 +114,7 @@ class Pictura {
             document.head.appendChild(script);
 
             // Пытаемся загрузить CSS плагина
-            if (pluginOptions.css !== false) {
+            if (pluginOptions.loadCss === true) {
                 const cssPath = `/assets/js/plugins/${pluginName}/index.css`;
                 if (!document.querySelector(`link[href="${cssPath}"]`)) {
                     const link = document.createElement('link');
@@ -148,8 +145,6 @@ class Pictura {
             if (typeof this[`${pluginName}Plugin`].init === 'function') {
                 this[`${pluginName}Plugin`].init();
             }
-
-            console.log(`Плагин ${pluginName} инициализирован с настройками:`, pluginOptions);
         } else {
             console.error(`Класс плагина ${pluginClassName} не найден после загрузки`);
         }
@@ -223,7 +218,6 @@ class Pictura {
                 const isInsideGallery = Array.from(this.galleries).some(g => g.contains(thumb));
 
                 if (isInsideGallery) {
-                    console.log('Клик по миниатюре (делегирование):', thumb);
                     e.preventDefault();
 
                     const group = thumb.dataset.group || 'default';
@@ -238,7 +232,6 @@ class Pictura {
                         groupImages = this.getGroupImages(gallery, group);
                     }
 
-                    console.log(`- Найдено ${groupImages.length} изображений в группе '${group}'`);
                     this.createModal(groupImages, thumb);
                     return;
                 }
@@ -249,7 +242,6 @@ class Pictura {
             if (viewAllBtn) {
                 const gallery = viewAllBtn.closest(this.settings.gallerySelector);
                 if (gallery) {
-                    console.log('Клик по кнопке "показать все" (делегирование):', viewAllBtn);
                     e.preventDefault();
 
                     let allImages;
@@ -262,7 +254,6 @@ class Pictura {
                         allImages = Array.from(gallery.querySelectorAll(this.settings.thumbnailSelector));
                     }
 
-                    console.log(`- В галерее найдено ${allImages.length} изображений`);
                     if (allImages.length) {
                         this.createModal(allImages, allImages[0]);
                     }
@@ -271,14 +262,6 @@ class Pictura {
             }
         });
 
-        // Инициализируем существующие галереи (для отладки)
-        this.galleries.forEach((gallery, index) => {
-            console.log(`Настройка галереи #${index}:`, gallery);
-            const thumbnails = gallery.querySelectorAll(this.settings.thumbnailSelector);
-            console.log(`- Найдено ${thumbnails.length} миниатюр`);
-            const viewAllBtn = gallery.querySelector(this.settings.viewAllSelector);
-            console.log(`- Кнопка "показать все": ${viewAllBtn ? 'найдена' : 'не найдена'}`);
-        });
     }
 
     getGroupImages(gallery, group) {
@@ -363,11 +346,6 @@ class Pictura {
             return;
         }
         this.lockBodyScroll();
-        console.log('Создание модального окна:', {
-            total: images.length,
-            currentIndex,
-            initialImage
-        });
 
         const overlay = document.createElement('div');
         overlay.className = 'gallery-overlay';
@@ -663,8 +641,6 @@ class Pictura {
 
 
     changeMedia(contentContainer, currentElement, newElement, direction) {
-        console.log('Смена медиа:', currentElement);
-
         // Получаем URL медиа
         const mediaUrl = this.getImageUrl(newElement);
         if (!mediaUrl) {

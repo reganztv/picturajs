@@ -7,11 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
       zoom: {
         maxScale: 3,
         step: 1,
-        controlsEnabled: true
+        controlsEnabled: true,
+        loadCss: true
       },
-      video: {},
+      video: {
+        loadCss: true
+      },
       thumbnails: {
-        type: 'thumbnails' // можно также поменять на 'dots'
+        type: 'dots', // можно также поменять на 'dots'
+        loadCss: true
       }
     },
   });
