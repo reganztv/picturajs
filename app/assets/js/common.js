@@ -8,10 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
         maxScale: 3,
         step: 1,
         controlsEnabled: true,
-        loadCss: true
       },
       video: {
-        loadCss: true
       },
       thumbnails: {
         type: 'dots', // можно также поменять на 'dots'
